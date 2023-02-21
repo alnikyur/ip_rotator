@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ -z "$1" ]; then
+  echo "Variable is empty, please enter ip or fqdn"
+  exit 1
+fi
+
 interfaces=() # List of interfaces
 ip_idx=0 #Index of the current IP address in the list of interfaces
 
@@ -20,7 +25,7 @@ while true; do
   echo "Using IP address $ip on interface $interface for this request"
 
   # Execute request
-  curl --interface $ip https://api.myip.com
+  curl --interface $ip $1
 
   # Increase index of IP address
   ip_idx=$((ip_idx + 1))

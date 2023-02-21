@@ -1,26 +1,37 @@
 import subprocess
-import requests
+import netifaces as ni
+import random
+import sys
 
-# Get list of all interfaces
-interfaces = subprocess.check_output("ip -o link show | awk -F': ' '{print $2}' | awk '{print $1}'", shell=True, text=True).split("\n")
+url = sys.argv[1]
 
-interfaces.pop()
+# Getting the list of available interfaces
+interfaces = ni.interfaces()
 
-# Get IP addresses for each interface
-ips = {}
-for interface in interfaces:
-    ip_output = subprocess.check_output(f"ip -o -4 addr show dev {interface} | awk '{{print $4}}' | cut -d'/' -f1", shell=True, text=True)
-    ip = ip_output.strip()
-    ips[interface] = ip
+print(interfaces)
 
-# Iterate through all interfaces and perform a request using their IP addresses
-for interface, ip in ips.items():
-    print(f"Using IP address {ip} on interface {interface} for this request")
-    response = requests.get("https://api.myip.com", headers={"User-Agent": "Mozilla/5.0"}, timeout=10, proxies={"http": f"{ip}:80"})
+# Getting IP addresses for each interface
+addresses = {}
+for iface in interfaces:
+    try:
+        address = ni.ifaddresses(iface)[ni.AF_INET][0]['addr']
+        addresses[iface] = address
+    except:
+        pass
 
-    # Check if there any othoer interfaces exist
-    if len(ips) == 1:
-        break
+# Main program loop
+while len(addresses) > 0:
+    #  Choosing a random interface from the available ones
+    iface = random.choice(list(addresses.keys()))
 
-    # Remove the used interface from the dictionary
-    del ips[interface]
+    # Getting the current IP address for the selected interface
+    ip_address = addresses[iface]
+
+    # Sending a request using the current IP address
+    cmd = ['curl', '-l', url]
+    subprocess.run(cmd)
+
+    print(iface)
+
+    # Removing the used interface from the dictionary
+    del addresses[iface]
