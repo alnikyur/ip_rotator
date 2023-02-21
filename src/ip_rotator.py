@@ -16,7 +16,7 @@ for interface in interfaces:
 # Iterate through all interfaces and perform a request using their IP addresses
 for interface, ip in ips.items():
     print(f"Using IP address {ip} on interface {interface} for this request")
-    response = requests.get("http://example.com", headers={"User-Agent": "Mozilla/5.0"}, timeout=10, proxies={"http": f"{ip}:80"})
+    response = requests.get("https://api.myip.com", headers={"User-Agent": "Mozilla/5.0"}, timeout=10, proxies={"http": f"{ip}:80"})
 
     # Check if there any othoer interfaces exist
     if len(ips) == 1:

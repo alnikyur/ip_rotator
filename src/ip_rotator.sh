@@ -20,7 +20,7 @@ while true; do
   echo "Using IP address $ip on interface $interface for this request"
 
   # Execute request
-  curl --interface $ip http://2ip.ru
+  curl --interface $ip https://api.myip.com
 
   # Increase index of IP address
   ip_idx=$((ip_idx + 1))
