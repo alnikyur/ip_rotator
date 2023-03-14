@@ -116,3 +116,30 @@ resource "aws_instance" "entrypoint_server" {
   ]
 
 }
+
+resource "aws_ecr_repository" "docker_backend" {
+  name                 = "willow_backend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+}
+
+resource "aws_ecr_repository" "docker_frontend" {
+  name                 = "willow_frontend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+}
+
+resource "aws_ecr_repository" "docker_saver" {
+  name                 = "willow_saver"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = false
+  }
+}

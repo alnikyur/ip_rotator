@@ -12,3 +12,8 @@ variable "vpn_count" {
   type        = number
   default     = "2"
 }
+
+variable "docker_ecr" {
+  type        = number
+  default     = "3"
+}
