@@ -1,3 +1,4 @@
+# IAM role
 resource "aws_iam_role" "ec2-role-terraform" {
   name = "ec2-role-terraform"
   assume_role_policy = jsonencode({
@@ -14,6 +15,7 @@ resource "aws_iam_role" "ec2-role-terraform" {
   })
 }
 
+# IAM policy
 resource "aws_iam_role_policy_attachment" "ec2-role-terraform-attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
   role = aws_iam_role.ec2-role-terraform.name
@@ -24,18 +26,14 @@ resource "aws_iam_instance_profile" "ec2-role-terraform-instance-profile" {
   role = aws_iam_role.ec2-role-terraform.name
 }
 
+# Security groups
 resource "aws_security_group" "sg-vpn-terraform" {
   name_prefix = "example-sg"
+
   ingress {
     from_port   = 0
     to_port     = 0
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "udp"
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
@@ -46,6 +44,7 @@ resource "aws_security_group" "sg-vpn-terraform" {
   }
 }
 
+# Check available AMI depend on region
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -62,13 +61,13 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+# EC2 vpn instances (openvpn will be installed automatically)
 resource "aws_instance" "vpn" {
   count         = var.vpn_count
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
   key_name      = "vpn-test"
   associate_public_ip_address = "true"
-#  iam_instance_profile = "ec2-test-role"
   iam_instance_profile = aws_iam_instance_profile.ec2-role-terraform-instance-profile.name
   vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
 
@@ -100,12 +99,14 @@ resource "aws_instance" "vpn" {
 
 }
 
+# EC2 target instance (this is optional, used for testing nmnap scanning)
 resource "aws_instance" "target" {
-  count         = var.target_count
+  count         = var.create_target_instance ? 1 : 0
   ami           = "ami-0557a15b87f6559cf"
   instance_type = "t2.micro"
   key_name      = "vpn-test"
   associate_public_ip_address = "true"
+  vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -143,18 +144,15 @@ resource "aws_instance" "target" {
   }
 }
 
-resource "aws_s3_bucket" "vpn_bucket" {
-  bucket = "vpn-config-terraform"
-  force_destroy = true
-}
-
+# EC2 main server for backend/frontend part
 resource "aws_instance" "entrypoint_server" {
-  count         = var.entrypoint_server_count
+  count         = var.create_entrypoint_instance ? 1 : 0
   ami           = "ami-0557a15b87f6559cf"
   instance_type = "t3.medium"
   key_name      = "vpn-test"
   associate_public_ip_address = "true"
   iam_instance_profile = "ec2-test-role"
+  vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -183,6 +181,13 @@ resource "aws_instance" "entrypoint_server" {
 
 }
 
+# S3 bucket to locate ovpn config from vpn servers
+resource "aws_s3_bucket" "vpn_bucket" {
+  bucket = "vpn-config-terraform"
+  force_destroy = true
+}
+
+# ECR to store backend and frontend part in docker images
 resource "aws_ecr_repository" "docker_backend" {
   name                 = "willow_backend"
   image_tag_mutability = "MUTABLE"

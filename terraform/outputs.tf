@@ -27,3 +27,9 @@ output "target_instance_private_ip_addr" {
   value       = aws_instance.target.*.private_ip
   description = "The private IP address of the main server instance."
 }
+
+output "s3_bucket" {
+  value       = aws_s3_bucket.vpn_bucket.bucket_domain_name
+  description = "The private IP address of the main server instance."
+}
+

@@ -1,8 +1,3 @@
-variable "target_count" {
-  type        = number
-  default     = "1"
-}
-
 variable "entrypoint_server_count" {
   type        = number
   default     = "1"
@@ -21,4 +16,16 @@ variable "docker_ecr" {
 variable "region" {
   description = "The AWS region where the EC2 instance should be launched."
   default     = "us-east-1"
+}
+
+variable "create_target_instance" {
+  description = "Whether to create an EC2 instance or not"
+  type        = bool
+  default     = true
+}
+
+variable "create_entrypoint_instance" {
+  description = "Whether to create an EC2 instance or not"
+  type        = bool
+  default     = true
 }
