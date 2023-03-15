@@ -17,3 +17,8 @@ variable "docker_ecr" {
   type        = number
   default     = "3"
 }
+
+variable "region" {
+  description = "The AWS region where the EC2 instance should be launched."
+  default     = "us-east-1"
+}

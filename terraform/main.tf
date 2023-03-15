@@ -1,10 +1,76 @@
+resource "aws_iam_role" "ec2-role-terraform" {
+  name = "ec2-role-terraform"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ec2-role-terraform-attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  role = aws_iam_role.ec2-role-terraform.name
+}
+
+resource "aws_iam_instance_profile" "ec2-role-terraform-instance-profile" {
+  name = "example-instance-profile"
+  role = aws_iam_role.ec2-role-terraform.name
+}
+
+resource "aws_security_group" "sg-vpn-terraform" {
+  name_prefix = "example-sg"
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
 resource "aws_instance" "vpn" {
   count         = var.vpn_count
-  ami           = "ami-0557a15b87f6559cf"
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
   key_name      = "vpn-test"
   associate_public_ip_address = "true"
-  iam_instance_profile = "ec2-test-role"
+#  iam_instance_profile = "ec2-test-role"
+  iam_instance_profile = aws_iam_instance_profile.ec2-role-terraform-instance-profile.name
+  vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
 
   user_data = <<-EOF
               #!/bin/bash
