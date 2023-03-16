@@ -18,7 +18,7 @@ resource "aws_iam_role" "ec2-role-terraform" {
 # IAM policy
 resource "aws_iam_role_policy_attachment" "ec2-role-terraform-attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-  role = aws_iam_role.ec2-role-terraform.name
+  role       = aws_iam_role.ec2-role-terraform.name
 }
 
 resource "aws_iam_instance_profile" "ec2-role-terraform-instance-profile" {
@@ -63,13 +63,13 @@ data "aws_ami" "ubuntu" {
 
 # EC2 vpn instances (openvpn will be installed automatically)
 resource "aws_instance" "vpn" {
-  count         = var.vpn_count
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
-  key_name      = "vpn-test"
+  count                       = var.vpn_count
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t2.micro"
+  key_name                    = var.key_name
   associate_public_ip_address = "true"
-  iam_instance_profile = aws_iam_instance_profile.ec2-role-terraform-instance-profile.name
-  vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
+  iam_instance_profile        = aws_iam_instance_profile.ec2-role-terraform-instance-profile.name
+  vpc_security_group_ids      = [aws_security_group.sg-vpn-terraform.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -80,7 +80,7 @@ resource "aws_instance" "vpn" {
               AUTO_INSTALL=y ./openvpn-install.sh
               cd /root && mv client.ovpn client_${count.index + 1}.ovpn
               sed -i "s/dev tun/dev tun${count.index + 1}/g" client_${count.index + 1}.ovpn
-              aws s3 cp /root/client_${count.index + 1}.ovpn s3://vpn-config-terraform
+              aws s3 cp /root/client_${count.index + 1}.ovpn s3://a90143-vpn-config-terraform
               EOF
 
   ebs_block_device {
@@ -101,12 +101,12 @@ resource "aws_instance" "vpn" {
 
 # EC2 target instance (this is optional, used for testing nmnap scanning)
 resource "aws_instance" "target" {
-  count         = var.create_target_instance ? 1 : 0
-  ami           = "ami-0557a15b87f6559cf"
-  instance_type = "t2.micro"
-  key_name      = "vpn-test"
+  count                       = var.create_target_instance ? 1 : 0
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t2.micro"
+  key_name                    = var.key_name
   associate_public_ip_address = "true"
-  vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
+  vpc_security_group_ids      = [aws_security_group.sg-vpn-terraform.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -146,13 +146,13 @@ resource "aws_instance" "target" {
 
 # EC2 main server for backend/frontend part
 resource "aws_instance" "entrypoint_server" {
-  count         = var.create_entrypoint_instance ? 1 : 0
-  ami           = "ami-0557a15b87f6559cf"
-  instance_type = "t3.medium"
-  key_name      = "vpn-test"
+  count                       = var.create_entrypoint_instance ? 1 : 0
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t3.micro"
+  key_name                    = var.key_name
   associate_public_ip_address = "true"
-  iam_instance_profile = "ec2-test-role"
-  vpc_security_group_ids = [aws_security_group.sg-vpn-terraform.id]
+  iam_instance_profile        = aws_iam_instance_profile.ec2-role-terraform-instance-profile.name
+  vpc_security_group_ids      = [aws_security_group.sg-vpn-terraform.id]
 
   user_data = <<-EOF
               #!/bin/bash
@@ -160,7 +160,7 @@ resource "aws_instance" "entrypoint_server" {
               mkdir -p /tmp/ovpn_client_config/
               cd /tmp/ovpn_client_config/
               sleep 30
-              aws s3 cp --recursive s3://vpn-config-terraform ./
+              aws s3 cp --recursive s3://a90143-vpn-config-terraform./
               for i in $(ls -1v); do sudo openvpn --config $i --daemon; done
               EOF
 
@@ -183,7 +183,7 @@ resource "aws_instance" "entrypoint_server" {
 
 # S3 bucket to locate ovpn config from vpn servers
 resource "aws_s3_bucket" "vpn_bucket" {
-  bucket = "vpn-config-terraform"
+  bucket        = "a90143-vpn-config-terraform"
   force_destroy = true
 }
 

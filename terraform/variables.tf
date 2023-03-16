@@ -1,16 +1,16 @@
 variable "entrypoint_server_count" {
-  type        = number
-  default     = "1"
+  type    = number
+  default = "1"
 }
 
 variable "vpn_count" {
-  type        = number
-  default     = "2"
+  type    = number
+  default = "2"
 }
 
 variable "docker_ecr" {
-  type        = number
-  default     = "3"
+  type    = number
+  default = "3"
 }
 
 variable "region" {
@@ -29,3 +29,10 @@ variable "create_entrypoint_instance" {
   type        = bool
   default     = true
 }
+
+variable "key_name" {
+  description = "Specify SSH key to access instance"
+  type        = string
+  default     = vpn-test
+}
+

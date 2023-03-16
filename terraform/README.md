@@ -14,12 +14,11 @@ OVPN clients configuration files will be stored in S3 bucket and can be easily u
 ### Run the next command to create infrastructure
 1. Firstly create `key-pair` with name `vpn-test`. This is only one manual step, every other steps will be fully-automated.
 2. Run `terraform init` command
-3. Run `terraform apply` command
+3. Run `terraform fmt` command
+4. Run `terraform validate` command
+3. Run `terraform apply` command and put `yes` or `terraform apply --auto-approve`
 4. After some time you will be able to see output of your infrastructure. The output contain next info:
 - Entrypoint instance private/public ip address
 - S3 bucket URL
 - Target instance private/public ip address
 - VPN instance private/public ip address
-
-
-
