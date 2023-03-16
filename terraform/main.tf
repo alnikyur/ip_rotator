@@ -110,7 +110,7 @@ resource "aws_instance" "target" {
 
   user_data = <<-EOF
               #!/bin/bash
-              apt-get install -y ca-certificates curl gnupg lsb-release
+              apt-get update && apt-get install -y ca-certificates curl gnupg lsb-release
               mkdir -m 0755 -p /etc/apt/keyrings
               curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
               echo \
@@ -148,7 +148,7 @@ resource "aws_instance" "target" {
 resource "aws_instance" "entrypoint_server" {
   count                       = var.create_entrypoint_instance ? 1 : 0
   ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t3.micro"
+  instance_type               = "t3.small"
   key_name                    = var.key_name
   associate_public_ip_address = "true"
   iam_instance_profile        = aws_iam_instance_profile.ec2-role-terraform-instance-profile.name
@@ -156,11 +156,22 @@ resource "aws_instance" "entrypoint_server" {
 
   user_data = <<-EOF
               #!/bin/bash
-              apt-get update && apt-get install awscli openvpn -y
+
+              # Docker install
+              apt-get update && apt-get install awscli openvpn ca-certificates curl gnupg lsb-release -y
+              mkdir -m 0755 -p /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              echo \
+                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+                $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
+              systemctl start docker
+
+              # OVPN configure
               mkdir -p /tmp/ovpn_client_config/
               cd /tmp/ovpn_client_config/
               sleep 30
-              aws s3 cp --recursive s3://a90143-vpn-config-terraform./
+              aws s3 cp --recursive s3://a90143-vpn-config-terraform ./
               for i in $(ls -1v); do sudo openvpn --config $i --daemon; done
               EOF
 

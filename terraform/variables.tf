@@ -1,8 +1,3 @@
-variable "entrypoint_server_count" {
-  type    = number
-  default = "1"
-}
-
 variable "vpn_count" {
   type    = number
   default = "2"
@@ -33,6 +28,6 @@ variable "create_entrypoint_instance" {
 variable "key_name" {
   description = "Specify SSH key to access instance"
   type        = string
-  default     = vpn-test
+  default     = "vpn-test"
 }
 
